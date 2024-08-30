@@ -1,1 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta name="theme-color" content="#000000" />
+    <title>Lexical Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      .editor-container {
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-bottom: 20px;
+      }
+      .result {
+        margin-top: 20px;
+        font-weight: bold;
+        color: red;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="root">
+      <div class="App">
+        <h1>Lexical Test Example</h1>
+        <div class="editor-container">
+          <div
+            class="editor-input some-class"
+            id="editor"
+            contenteditable="true"
+          ></div>
+        </div>
+        <div id="test-results" class="result"></div>
+      </div>
+    </div>
+
+    <script type="module">
+      import {
+        createEditor,
+        $getRoot,
+        $createParagraphNode,
+        $createTextNode,
+        $getNodeByKey,
+      } from "https://esm.sh/lexical";
+
+      // Lexical Editor initialization
+      const editor = createEditor({
+        namespace: "TestNamespace",
+        onError: (error) => console.error(error),
+      });
+      console.log("Editor initialized", editor);
+      // Editor root element
+      const editorRootElement = document.getElementById("editor");
+      editor.setRootElement(editorRootElement);
+
+      // Create some initial content for testing
+      editor.update(() => {
+        const root = $getRoot();
+        const paragraph1 = $createParagraphNode();
+        const textNode1 = $createTextNode("This is a test paragraph.");
+        paragraph1.append(textNode1);
+        root.append(paragraph1);
+
+        // Assign a known key to the paragraph node for testing
+        const paragraphKey = paragraph1.getKey();
+        editorRootElement.dataset.lexicalKey = paragraphKey; // Add key to the DOM element
+      });
+
+      // FUNTION TO BE TESTED
+      const editorState = editor.getEditorState();
+      function findLexicalNodeFromDOMNode(domNode) {
+        let foundNode = null;
+
+        editorState.read(() => {
+          const rootNode = editorState.getRoot();
+          rootNode.getChildren().forEach((child) => {
+            foundNode = findNodeRecursively(child, domNode);
+            if (foundNode) {
+              return; // Stop searching once found
+            }
+          });
+        });
+
+        return foundNode;
+      }
+
+      function findNodeRecursively(lexicalNode, domNode) {
+        if (lexicalNode.__key === domNode.__lexicalKey) {
+          return lexicalNode;
+        }
+
+        const children = lexicalNode.getChildren();
+        for (let i = 0; i < children.length; i++) {
+          const foundNode = findNodeRecursively(children[i], domNode);
+          if (foundNode) {
+            return foundNode;
+          }
+        }
+
+        return null;
+      }
+
+      // Run the function after the editor is fully initialized
+      setTimeout(() => {
+        const domNode = document.querySelector(".some-class");
+        console.log("Test:")
+        console.log(findLexicalNodeFromDOMNode(domNode));
+      }, 1000);
+    </script>
+  </body>
+</html>
 
